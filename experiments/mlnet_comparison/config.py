@@ -20,10 +20,11 @@ total_frames_each_run = 7500
 batchsize = 10
 dreyeve_train_seq = range(1, 37+1)
 dreyeve_test_seq = range(38, 74+1)
-train_frame_range = range(0, 3500) + range(4000, total_frames_each_run)
+
+train_frame_range = list(range(0, 3500)) + list(range(4000, total_frames_each_run))
 val_frame_range = range(3500, 4000)
 test_frame_range = range(0, total_frames_each_run)
-DREYEVE_DIR = 'Z:/DATA'
+DREYEVE_DIR = 'C:/Users/SCTW54265/Olivia/DReyeVE/code/DREYEVE_DATA'
 
 #########################################################################
 # TRAINING SETTINGS										            	#
@@ -31,8 +32,9 @@ DREYEVE_DIR = 'Z:/DATA'
 # number of validation images
 nb_imgs_val = 64 * batchsize
 # number of epochs
-nb_epoch = 999
+nb_epoch = 5
 # samples per epoch
-nb_samples_per_epoch = 256 * batchsize
+nb_samples_per_epoch = 5 * batchsize
 
-experiment_id = uuid.uuid4()
+# experiment_id = uuid.uuid4()
+experiment_id = "e3cfa94f-cc94-4098-88ce-8b1656ce43e7"

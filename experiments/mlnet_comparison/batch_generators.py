@@ -20,7 +20,7 @@ def load_batch(batchsize, mode, gt_type):
     :return: X and Y as ndarray having shape (b, c, h, w).
     """
     assert mode in ['train', 'val', 'test'], 'Unknown mode {} for dreyeve batch loader'.format(mode)
-    assert gt_type in ['sal', 'fix'], 'Unknown gt_type {} for dreyeve batch loader'.format(gt_type)
+    assert gt_type in ['fix'], 'Unknown gt_type {} for dreyeve batch loader'.format(gt_type)
 
     if mode == 'train':
         sequences = dreyeve_train_seq
@@ -38,16 +38,23 @@ def load_batch(batchsize, mode, gt_type):
     x_list = []
     y_list = []
 
-    for b in xrange(0, batchsize):
+    for b in range(0, batchsize):
         seq = random.choice(sequences)
         fr = random.choice(allowed_frames)
 
-        x_list.append(join(DREYEVE_DIR, '{:02d}'.format(seq), 'frames', '{:06d}.jpg'.format(fr)))
-        y_list.append(join(DREYEVE_DIR, '{:02d}'.format(seq), 'saliency' if gt_type == 'sal' else 'saliency_fix',
-                           '{:06d}.png'.format(fr+1)))
+        # x_list.append(join(DREYEVE_DIR, '{:02d}'.format(seq), 'mean_frame.png'.format(fr))) 
+        x_list.append(join(DREYEVE_DIR, '{:02d}'.format(seq), 'mean_frame.png').replace("\\", "/"))
+        y_list.append(join(DREYEVE_DIR, '{:02d}'.format(seq), 'mean_gt.png').replace("\\", "/"))
+    
 
     X = preprocess_images(x_list, shape_r=shape_r, shape_c=shape_c)
+
+    # Correctly transpose from (batch_size, channels, height, width) to (batch_size, height, width, channels)
+    X = X.transpose((0, 2, 3, 1))  
+
     Y = preprocess_maps(y_list, shape_r=shape_r_gt, shape_c=shape_c_gt)
+    Y = Y.transpose((0, 2, 3, 1))  # Ensure the same shape for Y if needed
+
 
     # TODO apply random mirroring?
 
@@ -70,6 +77,6 @@ def generate_batch(batchsize, mode, gt_type):
 if __name__ == '__main__':
     X, Y = load_batch(8, mode='train', gt_type='fix')
 
-    print X.shape
-    print Y.shape
+    # print (X.shape)
+    # print (Y.shape)
     # TODO visualize?

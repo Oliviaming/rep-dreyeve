@@ -2,10 +2,10 @@ import numpy as np
 import cv2
 
 import os
-from keras.callbacks import Callback, EarlyStopping
+from keras.callbacks import Callback, EarlyStopping, ModelCheckpoint
 from os.path import join
 
-from keras_dl_modules.custom_keras_extensions.callbacks import Checkpointer
+# from keras_dl_modules.custom_keras_extensions.callbacks import Checkpointer
 
 from batch_generators import load_batch
 from config import experiment_id, batchsize
@@ -13,8 +13,44 @@ from config import shape_r, shape_c
 
 from utils import postprocess_predictions
 
-from computer_vision_utils.stitching import stitch_together
-from computer_vision_utils.io_helper import normalize
+
+# ==========================================================
+# REPLACEMENT FOR `computer_vision_utils.stitching.stitch_together`
+# ==========================================================
+def stitch_together(images, layout):
+    """
+    Stitch images into a grid.
+    Example: stitch_together([img1, img2, img3], layout=(1, 3)) creates a single row of 3 images.
+    """
+    rows, cols = layout
+    images = [img.astype(np.uint8) for img in images]  # Ensure images are uint8
+
+    # Reshape images into grid
+    stitched_rows = []
+    for row_idx in range(rows):
+        row_images = images[row_idx*cols : (row_idx+1)*cols]
+        stitched_row = np.hstack(row_images)
+        stitched_rows.append(stitched_row)
+
+    stitched_image = np.vstack(stitched_rows)
+    return stitched_image
+
+# ==========================================================
+# REPLACEMENT FOR `computer_vision_utils.io_helper.normalize`
+# ==========================================================
+def normalize(img):
+    """
+    Normalize image to [0, 255] and convert to uint8.
+    """
+    if img.dtype == np.float32:
+        img = img - np.min(img)
+        img_max = np.max(img)
+        if img_max == 0:
+            img = img
+        else:
+            img = img / np.max(img)
+            img = (img * 255).astype(np.uint8)
+    return img
 
 
 class PredictionCallback(Callback):
@@ -30,7 +66,7 @@ class PredictionCallback(Callback):
         super(PredictionCallback, self).__init__()
 
         # create output directories if not existent
-        out_dir_path = join('predictions', '{}'.format(experiment_id))
+        out_dir_path = join('predictions', experiment_id)
         if not os.path.exists(out_dir_path):
             os.makedirs(out_dir_path)
 
@@ -48,11 +84,12 @@ class PredictionCallback(Callback):
             os.makedirs(cur_out_dir)
 
         # load and predict
-        X, Y = load_batch(batchsize=batchsize, mode='val', gt_type='fix')
+        X, Y = load_batch(batchsize=batchsize, mode='train', gt_type='fix')
+        X = X.transpose((0, 1, 2, 3))
         P = self.model.predict(X)
 
         for b in range(0, batchsize):
-            x = X[b].transpose(1, 2, 0)
+            x = X[b]
             x = normalize(x)
 
             p = postprocess_predictions(P[b, 0], shape_r, shape_c)
@@ -67,18 +104,16 @@ class PredictionCallback(Callback):
             cv2.imwrite(join(cur_out_dir, '{:02d}.png'.format(b)), stitch)
 
 
-
-
-
 def get_callbacks():
     """
     Function that returns the list of desired Keras callbacks.
     :return: a list of callbacks.
     """
-
-    return [EarlyStopping(patience=5),
-            Checkpointer(join('checkpoints', '{}'.format(experiment_id),
-                              'weights.mlnet.{epoch:02d}-{val_loss:.4f}.pkl'),
-                         save_best_only=True),
-            PredictionCallback(experiment_id)
-            ]
+    return [
+        EarlyStopping(patience=5),
+        ModelCheckpoint(  # Replace Checkpointer with ModelCheckpoint
+            filepath=join('checkpoints', experiment_id, 'weights.mlnet.{epoch:02d}-{val_loss:.4f}.h5'),
+            save_best_only=True
+        ),
+        PredictionCallback(experiment_id)
+    ]

@@ -33,6 +33,13 @@ def preprocess_images(paths, shape_r, shape_c):
 
     for i, path in enumerate(paths):
         original_image = cv2.imread(path)
+        # Ensure the image was read successfully
+        if original_image is None:
+            raise ValueError(f"Failed to load image at {path}. Check the path and integrity of the image.")
+        # Ensure the image has at least one channel (e.g., RGB)
+        if original_image.shape[-1] != 3:  # Check if the image has 3 channels (RGB)
+            raise ValueError(f"Image at {path} does not have 3 channels. It has {original_image.shape[-1]} channels.")
+        
         padded_image = padding(original_image, shape_r, shape_c, 3)
         ims[i] = padded_image
 
