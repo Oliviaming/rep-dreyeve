@@ -57,7 +57,7 @@ if __name__ == '__main__':
     assert args.seq is not None, 'Please provide a correct dreyeve sequence'
     assert args.pred_dir is not None, 'Please provide a correct pred_dir'
 
-    dreyeve_dir = 'Z:/DATA'  # local
+    dreyeve_dir = 'C:/Users/SCTW54265/Olivia/DReyeVE/code/DREYEVE_DATA'  # local
     # dreyeve_dir = '/gpfs/work/IscrC_DeepVD/dabati/DREYEVE/data/'  # cineca
 
     # get the model
