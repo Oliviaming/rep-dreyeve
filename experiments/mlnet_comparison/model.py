@@ -17,6 +17,8 @@ import numpy as np
 from config import experiment_id
 import os
 
+from keras.utils import custom_object_scope
+
 
 
 def get_latest_checkpoint(experiment_id):
@@ -50,17 +52,18 @@ def get_weights_vgg16(f, id):
     return weights
 
 def ml_net_model(img_rows=480, img_cols=640, downsampling_factor_net=8, downsampling_factor_product=10):
-    f = h5py.File("vgg16_weights.h5")
-    
+    # f = h5py.File("vgg16_weights.h5")
+
     # Check if a checkpoint exists for the current experiment
-    # checkpoint_path = get_latest_checkpoint(experiment_id)
-    # if checkpoint_path:
-    #     print(f"Loading model weights from checkpoint: {checkpoint_path}")
-    #     model = tf.keras.models.load_model(checkpoint_path, custom_objects={'loss': loss})
-    #     return model
-    # else:
-    #     print("No checkpoint found. Loading VGG16 weights instead.")
-    #     f = h5py.File("vgg16_weights.h5")
+    checkpoint_path = get_latest_checkpoint(experiment_id)
+    if checkpoint_path:
+        print(f"Loading model weights from checkpoint: {checkpoint_path}")
+        with custom_object_scope({'EltWiseProduct': EltWiseProduct, 'loss': loss}):
+            model = tf.keras.models.load_model(checkpoint_path)
+        return model
+    else:
+        print("No checkpoint found. Loading VGG16 weights instead.")
+        f = h5py.File("vgg16_weights.h5")
 
     # input_ml_net = Input(shape=(3, img_rows, img_cols))
     input_ml_net = Input(shape=(img_rows, img_cols, 3))  # Channels-last format
