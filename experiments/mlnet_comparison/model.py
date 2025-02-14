@@ -14,18 +14,23 @@ import math
 from config import shape_r_gt, shape_c_gt
 import tensorflow as tf
 import numpy as np
-from config import experiment_id
+# from config import experiment_id
 import os
 
 from keras.utils import custom_object_scope
 
 
+def get_last_experiment_id():
+    if os.path.exists("last_experiment.txt"):
+        with open("last_experiment.txt", "r") as f:
+            return f.read().strip()
+    return None
 
 def get_latest_checkpoint(experiment_id):
     """
-    Function to find the latest checkpoint file in the experiment directory.
+    Function to find the latest checkpoint file in the experiment directory with the least loss value.
     :param experiment_id: The experiment ID.
-    :return: Path to the latest checkpoint file, or None if no checkpoint is found.
+    :return: Path to the checkpoint file with the least loss value, or None if no checkpoint is found.
     """
     checkpoint_dir = os.path.join('checkpoints', experiment_id)
     if not os.path.exists(checkpoint_dir):
@@ -35,10 +40,12 @@ def get_latest_checkpoint(experiment_id):
     if not checkpoint_files:
         return None
 
-    # Sort checkpoint files by epoch number (assuming the filename format is 'weights.mlnet.{epoch:02d}-{val_loss:.4f}.h5')
-    checkpoint_files.sort(key=lambda x: int(x.split('.')[2].split('-')[0]))
-    latest_checkpoint = checkpoint_files[-1]
-    return os.path.join(checkpoint_dir, latest_checkpoint)
+    # Sort checkpoint files by validation loss value (assuming the filename format is 'weights.mlnet.{epoch:02d}-{val_loss:.4f}.h5')
+    checkpoint_files.sort(key=lambda x: float(x.split('-')[1].split('.h5')[0]))
+
+    # Get the checkpoint with the least loss value
+    best_checkpoint = checkpoint_files[0]
+    return os.path.join(checkpoint_dir, best_checkpoint)
 
 
 def get_weights_vgg16(f, id):
@@ -55,7 +62,8 @@ def ml_net_model(img_rows=480, img_cols=640, downsampling_factor_net=8, downsamp
     # f = h5py.File("vgg16_weights.h5")
 
     # Check if a checkpoint exists for the current experiment
-    checkpoint_path = get_latest_checkpoint(experiment_id)
+    last_experiment_id = get_last_experiment_id()
+    checkpoint_path = get_latest_checkpoint(last_experiment_id)
     if checkpoint_path:
         print(f"Loading model weights from checkpoint: {checkpoint_path}")
         with custom_object_scope({'EltWiseProduct': EltWiseProduct, 'loss': loss}):

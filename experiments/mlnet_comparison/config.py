@@ -32,9 +32,15 @@ DREYEVE_DIR = 'C:/Users/SCTW54265/Olivia/DReyeVE/code/DREYEVE_DATA'
 # number of validation images
 nb_imgs_val = 64 * batchsize
 # number of epochs
-nb_epoch = 5
+nb_epoch = 50
 # samples per epoch
-nb_samples_per_epoch = 5 * batchsize
+nb_samples_per_epoch = 256 * batchsize
 
-# experiment_id = uuid.uuid4()
-experiment_id = "e3cfa94f-cc94-4098-88ce-8b1656ce43e7"
+each_experiment_id = uuid.uuid4()
+
+# Save the experiment_id to a file
+with open("last_experiment.txt", "w") as f:
+    f.write(str(each_experiment_id))
+
+
+# experiment_id = "e3cfa94f-cc94-4098-88ce-8b1656ce43e7"

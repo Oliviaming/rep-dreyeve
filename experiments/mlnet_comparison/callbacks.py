@@ -8,11 +8,12 @@ from os.path import join
 # from keras_dl_modules.custom_keras_extensions.callbacks import Checkpointer
 
 from batch_generators import load_batch
-from config import experiment_id, batchsize
+from config import batchsize, checkpoint_id
 from config import shape_r, shape_c
-
+from model import get_last_experiment_id
 from utils import postprocess_predictions
 
+experiment_id = get_last_experiment_id()
 
 # ==========================================================
 # REPLACEMENT FOR `computer_vision_utils.stitching.stitch_together`
