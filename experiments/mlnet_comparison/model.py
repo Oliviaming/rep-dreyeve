@@ -7,7 +7,8 @@ from keras.layers import Concatenate  # Or Add, Multiply, etc.
 
 from keras.layers import Conv2D, MaxPooling2D
 from keras.regularizers import l2
-import keras.backend as K
+# import keras.backend as K
+from keras import backend as K
 import h5py
 from eltwise_product import EltWiseProduct
 import math
@@ -20,10 +21,25 @@ import os
 from keras.utils import custom_object_scope
 
 
-def get_last_experiment_id():
-    if os.path.exists("last_experiment.txt"):
-        with open("last_experiment.txt", "r") as f:
-            return f.read().strip()
+def get_last_experiment_id(use_last_experiment=True):
+    """
+    Retrieve the last or second-to-last experiment_id from the file.
+    :param use_last_experiment: If True, return the last experiment_id. If False, return the second-to-last.
+    :return: The experiment_id, or None if the file is empty or doesn't exist.
+    """
+    if os.path.exists("all_experiments.txt"):
+        with open("all_experiments.txt", "r") as f:
+            lines = f.readlines()
+            if lines:
+                # Strip newline characters and filter out empty lines
+                lines = [line.strip() for line in lines if line.strip()]
+                if use_last_experiment:
+                    return lines[-1]  # Last line (most recent experiment)
+                else:
+                    if len(lines) >= 2:
+                        return lines[-2]  # Second-to-last line (previous experiment)
+                    else:
+                        pass
     return None
 
 def get_latest_checkpoint(experiment_id):
@@ -56,13 +72,15 @@ def get_weights_vgg16(f, id):
     if len(weights[0].shape) == 4:  # Check if it's a kernel (not bias)
         weights[0] = np.transpose(weights[0], (2, 3, 1, 0))  # Transpose to (height, width, input_channels, output_channels)
     
+    print(f"Layer {id} weights - min: {np.min(weights[0])}, max: {np.max(weights[0])}")
     return weights
 
 def ml_net_model(img_rows=480, img_cols=640, downsampling_factor_net=8, downsampling_factor_product=10):
     # f = h5py.File("vgg16_weights.h5")
 
     # Check if a checkpoint exists for the current experiment
-    last_experiment_id = get_last_experiment_id()
+    last_experiment_id = get_last_experiment_id(use_last_experiment=False)
+    print("This experiment on experiment_id:", last_experiment_id)
     checkpoint_path = get_latest_checkpoint(last_experiment_id)
     if checkpoint_path:
         print(f"Loading model weights from checkpoint: {checkpoint_path}")
@@ -203,25 +221,27 @@ def ml_net_model(img_rows=480, img_cols=640, downsampling_factor_net=8, downsamp
     rows_elt = math.ceil(img_rows / downsampling_factor_net) // downsampling_factor_product
     cols_elt = math.ceil(img_cols / downsampling_factor_net) // downsampling_factor_product
     eltprod = EltWiseProduct(init='zero', W_regularizer=l2(1/(rows_elt*cols_elt)))(pre_final_conv)
-    output_ml_net = Activation('relu')(eltprod)
+    # output_ml_net = Activation('relu')(eltprod)
+
+    output_ml_net = Activation('sigmoid')(eltprod)
 
     model = Model(inputs=[input_ml_net], outputs=[output_ml_net])
 
     return model
 
-
 def loss(y_true, y_pred):
-    # Compute the maximum value of y_pred across height and width dimensions
-    max_y = tf.reduce_max(y_pred, axis=[1, 2], keepdims=True)  # Shape: (batch_size, 1, 1, channels)
+    return tf.keras.losses.MeanSquaredError()(y_true, y_pred)
 
-    print("y_true.shape:", y_true.shape)
-    print("y_pred.shape:", y_pred.shape)
-    print("max_y.shape:", max_y.shape)
+
+
+# def loss(y_true, y_pred):
+#     # Compute the maximum value of y_pred across height and width dimensions
+#     max_y = tf.reduce_max(y_pred, axis=[1, 2], keepdims=True)  # Shape: (batch_size, 1, 1, channels)
     
-    # Normalize y_pred by its maximum value (add epsilon to avoid division by zero)
-    y_pred_normalized = y_pred / (max_y + tf.keras.backend.epsilon())
+#     # Normalize y_pred by its maximum value (add epsilon to avoid division by zero)
+#     y_pred_normalized = y_pred / (max_y + tf.keras.backend.epsilon())
     
-    # Compute the loss
-    loss_value = tf.reduce_mean(tf.square(y_pred_normalized - y_true) / (1 - y_true + 0.1))
+#     # Compute the loss
+#     loss_value = tf.reduce_mean(tf.square(y_pred_normalized - y_true) / (1 - y_true + 0.1))
     
-    return loss_value
+#     return loss_value

@@ -1,5 +1,6 @@
 import math
 import uuid
+from datetime import datetime
 
 #########################################################################
 # MODEL PARAMETERS														#
@@ -32,15 +33,25 @@ DREYEVE_DIR = 'C:/Users/SCTW54265/Olivia/DReyeVE/code/DREYEVE_DATA'
 # number of validation images
 nb_imgs_val = 64 * batchsize
 # number of epochs
-nb_epoch = 50
+nb_epoch = 2
 # samples per epoch
-nb_samples_per_epoch = 256 * batchsize
+nb_samples_per_epoch = 2 * batchsize
 
-each_experiment_id = uuid.uuid4()
 
-# Save the experiment_id to a file
-with open("last_experiment.txt", "w") as f:
-    f.write(str(each_experiment_id))
+#########################################################################
+# EXPERIMENT ID															#
+#########################################################################
+# use current datetime to generate a unique experiment id
+datetime_now = datetime.now()
+# convert datetime to string
+datetime_now_str = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")
+each_experiment_id = datetime_now_str
+
+
+# Append the experiment_id to the file
+with open("all_experiments.txt", "a") as f:
+    # Add a newline character before appending the new experiment_id
+    f.write(f"\n{each_experiment_id}")
 
 
 # experiment_id = "e3cfa94f-cc94-4098-88ce-8b1656ce43e7"

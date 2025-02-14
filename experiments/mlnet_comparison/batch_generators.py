@@ -1,6 +1,6 @@
 import numpy as np
 import random
-
+import matplotlib.pyplot as plt
 from os.path import join
 from utils import preprocess_images, preprocess_maps
 
@@ -53,10 +53,10 @@ def load_batch(batchsize, mode, gt_type):
     X = X.transpose((0, 2, 3, 1))  
 
     Y = preprocess_maps(y_list, shape_r=shape_r_gt, shape_c=shape_c_gt)
-    Y = Y.transpose((0, 2, 3, 1))  # Ensure the same shape for Y if needed
+    Y = Y.transpose((0, 2, 3, 1))  
 
-
-    # TODO apply random mirroring?
+    print(f"load batch X - min: {np.min(X)}, max: {np.max(X)}")
+    print(f"load batch Y - min: {np.min(Y)}, max: {np.max(Y)}")
 
     return np.float32(X), np.float32(Y)
 
@@ -73,10 +73,31 @@ def generate_batch(batchsize, mode, gt_type):
     while True:
         yield load_batch(batchsize, mode, gt_type)
 
-# test script
-if __name__ == '__main__':
-    X, Y = load_batch(8, mode='train', gt_type='fix')
 
-    # print (X.shape)
-    # print (Y.shape)
-    # TODO visualize?
+
+# # Test script
+# if __name__ == '__main__':
+#     X, Y = load_batch(4, mode='train', gt_type='fix')
+
+#     print(X.shape)  # Should be (batch_size, height, width, channels)
+#     print(Y.shape)  # Should be (batch_size, height, width, 1)
+
+#     # Visualize the batch
+#     fig, axes = plt.subplots(2, 4, figsize=(20, 5))
+#     for i in range(4):
+#         # Display the input image (X)
+#         img = X[i]  # Shape: (height, width, channels)
+#         img = np.clip(img, 0, 1)  # Ensure values are in [0, 1] for visualization
+#         axes[0, i].imshow(img)
+#         axes[0, i].axis('off')
+#         axes[0, i].set_title(f'Image {i+1}')
+        
+#         # Display the ground truth map (Y)
+#         gt_map = Y[i, :, :, 0]  # Shape: (height, width)
+#         gt_map = np.clip(gt_map, 0, 1)  # Ensure values are in [0, 1] for visualization
+#         axes[1, i].imshow(gt_map, cmap='gray')
+#         axes[1, i].axis('off')
+#         axes[1, i].set_title(f'GT {i+1}')
+    
+#     plt.show()
+
